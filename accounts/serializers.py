@@ -46,3 +46,20 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError({"password": "Passwords do not match."})
         return data
     
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True, write_only=True)
+    
+    new_password = serializers.RegexField(
+        regex=r'^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$',
+        write_only=True,
+        error_messages={'invalid': 'Password must be at least 8 chars with uppercase, number & symbol'}
+    )
+    
+    confirm_password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({"password": "Passwords do not match."})
+        return data
+    
+    

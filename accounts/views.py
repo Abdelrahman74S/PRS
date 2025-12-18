@@ -1,6 +1,12 @@
 from rest_framework.generics import RetrieveUpdateDestroyAPIView , CreateAPIView , ListAPIView , GenericAPIView
 from .models import UserProfile 
-from .serializers import UserProfileSerializer, UserRegistrationSerializer , ResetPasswordRequestSerializer , ResetPasswordSerializer
+from .serializers import (
+    UserProfileSerializer,
+    UserRegistrationSerializer,
+    ResetPasswordRequestSerializer,
+    ResetPasswordSerializer,
+    ChangePasswordSerializer
+)
 import os
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
@@ -149,3 +155,27 @@ class ResetPassword(GenericAPIView):
 
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             return Response({'error': 'Invalid token or user ID'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+class ChangePasswordView(GenericAPIView):
+    serializer_class = ChangePasswordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        old_password = serializer.validated_data["old_password"]
+        
+        if not user.check_password(old_password):
+            return Response(
+                {"old_password": ["Wrong password."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.set_password(serializer.validated_data["new_password"])
+        
+        user.save(update_fields=["password"])
+
+        return Response({"success": "Password updated successfully"}, status=status.HTTP_200_OK)

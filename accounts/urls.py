@@ -7,6 +7,7 @@ from .views import (
     LogoutView,
     RequestPasswordReset,
     ResetPassword,
+    ChangePasswordView
 )
 
 urlpatterns = [
@@ -21,4 +22,5 @@ urlpatterns = [
 
     path('password-reset/request/', RequestPasswordReset.as_view(), name='password-reset-request'),
     path('password-reset/<uidb64>/<token>/', ResetPassword.as_view(), name='password-reset-confirm'),
+    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
 ]

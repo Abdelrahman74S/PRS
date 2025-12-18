@@ -139,3 +139,10 @@ EMAIL_HOST_USER = os.getenv('MyEmail')
 EMAIL_HOST_PASSWORD = os.getenv('MyEmailPassword')  
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 PASSWORD_RESET_BASE_URL = os.getenv('PASSWORD_RESET_BASE_URL')
+
+
+SIMPLE_JWT = {
+    
+    'USER_ID_FIELD': 'user_id', 
+    'USER_ID_CLAIM': 'user_id', 
+}

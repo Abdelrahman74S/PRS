@@ -1,9 +1,8 @@
 from rest_framework.generics import RetrieveUpdateDestroyAPIView , CreateAPIView , ListAPIView , GenericAPIView
-from .models import UserProfile , PasswordReset
+from .models import UserProfile 
 from .serializers import UserProfileSerializer, UserRegistrationSerializer , ResetPasswordRequestSerializer , ResetPasswordSerializer
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from .models import PasswordReset
 import os
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny , IsAuthenticated , IsAdminUser
 from rest_framework_simplejwt.views import (
@@ -16,6 +15,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 from django.core.mail import send_mail
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 # Create your views here.
 
 class ListUserProfileView(ListAPIView):
@@ -28,23 +34,27 @@ class ListUserProfileView(ListAPIView):
         if user.is_staff:
             return UserProfile.objects.all()
         else:
-            return UserProfile.objects.filter(user=user)
+            return UserProfile.objects.filter(pk=user.pk)
 
 class UserProfileView(RetrieveUpdateDestroyAPIView):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated , IsAdminUser]
+    permission_classes = [IsAuthenticated]
+    lookup_url_kwarg  = 'user_id'
     
     def get_object(self):
-        return UserProfile.objects.get(user=self.request.user)
+        lookup_url_kwarg = self.lookup_url_kwarg or 'pk'
+        user_id = self.kwargs.get(lookup_url_kwarg)
+
+        if user_id:
+            if self.request.user.is_staff:
+                return get_object_or_404(UserProfile, pk=user_id)
+            else:
+                return self.request.user 
+        
+        return self.request.user
     
-    # def get_object(self):
-    #     user = self.request.user
-    #     if user.is_staff:
-    #         return UserProfile.objects.all()
-    #     else:
-    #         return UserProfile.objects.filter(user=user)
-    
+
 class UserRegistrationView(CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
@@ -86,64 +96,56 @@ class LogoutView(APIView):
         
         
 class RequestPasswordReset(GenericAPIView):
-    permission_classes = [AllowAny]
     serializer_class = ResetPasswordRequestSerializer
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
 
-        user = UserProfile.objects.filter(email__iexact=email).first()
+        user = User.objects.filter(email__iexact=email).first()
+
         if user:
             token_generator = PasswordResetTokenGenerator()
-            token = token_generator.make_token(user) 
+            token = token_generator.make_token(user)
+            
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
 
-            reset_obj = PasswordReset(email=email, token=token)
-            reset_obj.save()
-
-            reset_url = f"{settings.PASSWORD_RESET_BASE_URL}/{token}"
+            reset_url = f"{settings.PASSWORD_RESET_BASE_URL}/{uidb64}/{token}/"
 
             send_mail(
                 subject='Password Reset Request',
-                message=f'Hi {user.username},\nClick the link below to reset your password:\n{reset_url}',
+                message=f'Hi {user.username},\nClick here to reset: \n{reset_url}',
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
                 fail_silently=False,
             )
 
-            return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
-        else:
-            return Response({"error": "User with credentials not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+
 
 class ResetPassword(GenericAPIView):
     serializer_class = ResetPasswordSerializer
     permission_classes = []
 
-    def post(self, request, token):
+    def post(self, request, uidb64, token):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
         
-        new_password = data['new_password']
-        confirm_password = data['confirm_password']
-        
-        if new_password != confirm_password:
-            return Response({"error": "Passwords do not match"}, status=400)
-        
-        reset_obj = PasswordReset.objects.filter(token=token).first()
-        
-        if not reset_obj:
-            return Response({'error':'Invalid token'}, status=400)
-        
-        user = UserProfile.objects.filter(email=reset_obj.email).first()
-        
-        if user:
-            user.set_password(request.data['new_password'])
+        try:
+            user_id = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=user_id)
+            
+            token_generator = PasswordResetTokenGenerator()
+            
+            if not token_generator.check_token(user, token):
+                return Response({'error': 'Token is invalid or expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(serializer.validated_data['new_password'])
             user.save()
             
-            reset_obj.delete()
-            
-            return Response({'success':'Password updated'})
-        else: 
-            return Response({'error':'No user found'}, status=404)
+            return Response({'success': 'Password updated successfully'}, status=status.HTTP_200_OK)
+
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({'error': 'Invalid token or user ID'}, status=status.HTTP_400_BAD_REQUEST)

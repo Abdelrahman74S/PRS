@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from .models import UserProfile , PasswordReset
+from .models import UserProfile 
 from django.contrib.auth.hashers import make_password   
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['user_id', 'username', 'email', 'date_joined', 'date_updated', 'is_active']
+        fields = ['user_id', 'username', 'first_name', 'last_name','email', 'date_joined', 'date_updated', 'is_active']
         read_only_fields = ['user_id', 'date_joined', 'date_updated', 'is_active']
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -35,7 +35,14 @@ class ResetPasswordRequestSerializer(serializers.Serializer):
     
 class ResetPasswordSerializer(serializers.Serializer):
     new_password = serializers.RegexField(
-        regex=r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
+        regex=r'^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$',
         write_only=True,
-        error_messages={'invalid': ('Password must be at least 8 characters long with at least one capital letter and symbol')})
-    confirm_password = serializers.CharField(write_only=True, required=True)
+        error_messages={'invalid': 'Password must be at least 8 chars with uppercase, number & symbol'}
+    )
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({"password": "Passwords do not match."})
+        return data
+    

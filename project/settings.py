@@ -22,8 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^79jht*w6-)rv^m&!o)(gb3r@@%clm+1jnj_%9ip4xzou&b2ye'
-
+SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -44,6 +43,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'accounts',
     'rest_framework_simplejwt',
+    'drf_spectacular',
+    'Review',
+    'django_filters',
     
 ]
 
@@ -130,7 +132,40 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication', 
         'rest_framework.authentication.SessionAuthentication',     
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 2, 
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    
+'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '200/day',          
+        'user': '1000/day',        
+        
+        'review_create': '10/hour',  
+        'review_create': '2/minute',  
+        'review_update': '10/hour',    
+        'review_update': '1/minute',  
+        'review_list': '50/minute',  
+        'product_list': '50/minute', 
+    }
+
 }
+
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'PRS Api',
+    'DESCRIPTION': 'Product Review System',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
+}
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'           
@@ -143,7 +178,57 @@ PASSWORD_RESET_BASE_URL = os.getenv('PASSWORD_RESET_BASE_URL')
 
 
 SIMPLE_JWT = {
-    
     'USER_ID_FIELD': 'user_id', 
     'USER_ID_CLAIM': 'user_id', 
+}
+
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://127.0.0.1:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         }
+#     }
+# }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
+}
+
+
+LOGGING_DIR = os.path.join(BASE_DIR, 'logs')
+if not os.path.exists(LOGGING_DIR):
+    os.makedirs(LOGGING_DIR)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR', # نسجل الأخطاء فقط لتقليل حجم الملف
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGGING_DIR, 'django_errors.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
 }

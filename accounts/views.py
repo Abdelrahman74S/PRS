@@ -31,7 +31,6 @@ User = get_user_model()
 # Create your views here.
 
 class ListUserProfileView(ListAPIView):
-    queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
     
@@ -43,7 +42,6 @@ class ListUserProfileView(ListAPIView):
             return UserProfile.objects.filter(pk=user.pk)
 
 class UserProfileView(RetrieveUpdateDestroyAPIView):
-    queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
     lookup_url_kwarg  = 'user_id'
@@ -57,7 +55,7 @@ class UserProfileView(RetrieveUpdateDestroyAPIView):
                 return get_object_or_404(UserProfile, pk=user_id)
             else:
                 return self.request.user 
-        
+            
         return self.request.user
     
 

@@ -1,0 +1,24 @@
+###
+
+POST http://127.0.0.1:8000/api/login/ HTTP/1.1
+Content-Type: application/json
+
+{
+    "email": "abdoelashri841@gmail.com",
+    "password": "Abdo1234$"
+}
+
+###
+
+GET http://127.0.0.1:8000/api/users/ HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY1OTczNDI0LCJpYXQiOjE3NjU5NzMxMjQsImp0aSI6ImNjZTM5YTY2ZWQzMjQ2ZDhiOTVjYjUyY2FhM2Y3ZjAxIiwidXNlcl9pZCI6IjU3ZDRkOTU0LTFhY2EtNGM2Ni05Mzg4LTRmMzQ1ZmYzMjgwYSJ9.fpP6u5Oh7W-ncNBBKmC67pRQDqyTI2y-twQ2dd4Df-Y
+###
+
+PATCH http://127.0.0.1:8000/api/users/57d4d954-1aca-4c66-9388-4f345ff3280a/ HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY1OTczNDI0LCJpYXQiOjE3NjU5NzMxMjQsImp0aSI6ImNjZTM5YTY2ZWQzMjQ2ZDhiOTVjYjUyY2FhM2Y3ZjAxIiwidXNlcl9pZCI6IjU3ZDRkOTU0LTFhY2EtNGM2Ni05Mzg4LTRmMzQ1ZmYzMjgwYSJ9.fpP6u5Oh7W-ncNBBKmC67pRQDqyTI2y-twQ2dd4Df-Y
+
+{
+    "username": "Abdo1"
+}

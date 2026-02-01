@@ -1,41 +1,93 @@
-# Product Review System (PRS) - Backend API
+# Product Review System (PRS)
 
-A robust, high-performance RESTful API built with **Django Rest Framework (DRF)**. This project implements a complete product review ecosystem with advanced features like caching, throttling, and a voting system.
+A powerful Backend API built with Django and Django REST Framework (DRF) designed to manage products, user reviews, and personalized favorites. The system includes advanced features like request throttling, custom permissions, and automated profile management.
 
-## 🚀 Key Features
+## Key Features
 
-- **Product & Category Management:** Full CRUD operations with Slug-based lookups.
-- **Advanced Review System:** Users can review products once, with real-time average rating calculation.
-- **Review Voting:** "Upvote/Downvote" logic for reviews with automatic vote toggling.
-- **Favorites System:** Users can manage a personalized list of favorite products.
-- **Performance Optimization:** - **Redis Caching:** Drastic reduction in DB queries using `django-redis`.
-    - **Pagination:** Structured data delivery for better frontend performance.
-- **Security & Protection:**
-    - **Custom Permissions:** Object-level permissions (Admin vs Owner).
-    - **Throttling:** Protection against Spamming (Custom rates for review creation).
-- **Automated Workflows:** Django Signals for automatic cache invalidation and email notifications.
+- **Product Management**: Full CRUD operations for products including name, description, and pricing
+- **Advanced Review System**: Allows users to post ratings and text reviews for products
+- **Favorites List**: Users can bookmark products to a personal "Favorite" list
+- **Security & Throttling**:
+  - **Custom Permissions**: Ensures only owners can edit or delete their reviews and profiles
+  - **Rate Limiting**: Custom throttling (e.g., `ReviewRateThrottle`) to prevent spam and API abuse
+- **Search & Filtering**: Integrated `django-filter` to search products by specific criteria
+- **Automated Profiles**: Uses Django Signals to automatically create a `UserProfile` whenever a new `User` is registered
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-* **Framework:** Django & Django Rest Framework (DRF)
-* **Database:** PostgreSQL (Production) / SQLite (Development)
-* **Caching:** Redis
-* **Documentation:** Swagger UI (drf-spectacular)
+- **Backend**: Django 5.x
+- **API Framework**: Django REST Framework
+- **Database**: SQLite (Default)
+- **Filtering**: django-filter
+- **Authentication**: Token-based/Session-based via DRF
 
-Manual Setup
-Install requirements: pip install -r requirements.txt
+## Getting Started
 
-Configure your .env file.
+### Installation
 
-Run migrations: python manage.py migrate
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Abdelrahman74S/PRS.git
+   cd prs
+   ```
 
-Start Redis server locally.
+2. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Run server: python manage.py runserver
+3. **Apply Migrations**:
+   ```bash
+   python manage.py migrate
+   ```
 
-📖 API Documentation
-Once the server is running, you can explore the interactive API documentation:
+4. **Run the Server**:
+   ```bash
+   python manage.py runserver
+   ```
 
-Swagger UI: http://127.0.0.1:8000/api/schema/swagger-ui/
+## API Endpoints Summary
 
-Redoc: http://127.0.0.1:8000/api/schema/redoc/
+### Accounts
+
+- `POST /accounts/register/` - Create a new user account
+- `GET /accounts/profile/` - View or update the authenticated user's profile
+
+### Reviews & Products
+
+- `GET /review/products/` - List all products with filtering options
+- `POST /review/products/` - Add a new product (Admin/Owner)
+- `GET /review/reviews/` - List all product reviews
+- `POST /review/reviews/` - Submit a new review for a product
+- `GET /review/favorites/` - View your list of favorite products
+
+## Project Structure Highlights
+
+- **`Review/models.py`**: Defines the core logic for `Product`, `Review`, and `FavoriteProduct`
+- **`Review/signals.py`**: Handles the automatic creation of user profiles
+- **`Review/throttling.py`**: Contains custom rate-limiting logic for the API
+- **`Review/permission.py`**: Custom logic to verify object ownership before modification
+
+## Features in Detail
+
+### Custom Permissions
+
+The system implements custom permission classes to ensure:
+- Users can only edit or delete their own reviews
+- Profile modifications are restricted to the profile owner
+- Product management is restricted to authorized users
+
+### Rate Limiting
+
+Custom throttling classes prevent API abuse:
+- `ReviewRateThrottle`: Limits the number of review submissions per user
+- Configurable rate limits to balance user experience and system protection
+
+### Automated Profile Creation
+
+Django signals automatically create user profiles:
+- When a new user registers, a corresponding `UserProfile` is created
+- Ensures data consistency without manual intervention
+
+## Contact
+For questions or feedback, please open an issue on the [GitHub repository](https://github.com/Abdelrahman74S/PRS).
